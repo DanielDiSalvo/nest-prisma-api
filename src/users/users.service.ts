@@ -24,14 +24,14 @@ export class UsersService {
     return user;
   }
 
-  create(name: string, role: string) {
-    return this.prisma.user.create({
-      data: {
-        name,
-        role,
-      },
-    });
-  }
+  // create(name: string, role: string) {
+  //   return this.prisma.user.create({
+  //     data: {
+  //       name,
+  //       role,
+  //     },
+  //   });
+  // }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
     await this.findOne(id);

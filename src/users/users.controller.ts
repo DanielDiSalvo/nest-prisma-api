@@ -35,10 +35,10 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
-  @Post()
-  createUser(@Body() body: CreateUserDto) {
-    return this.usersService.create(body.name, body.role);
-  }
+  // @Post()
+  // createUser(@Body() body: CreateUserDto) {
+  //   return this.usersService.create(body.name, body.role);
+  // }
 
   @Delete(':id')
   deleteUser(@Param('id', ParseIntPipe) id: number) {
