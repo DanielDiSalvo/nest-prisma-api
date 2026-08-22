@@ -13,6 +13,8 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { Roles } from './decorators/roles.decorator';
+import { RolesGuard } from './guards/roles.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -39,5 +41,14 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   getProfile(@Req() req) {
     return req.user;
+  }
+
+  @Get('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  adminOnly() {
+    return {
+      message: 'Welcome, admin',
+    };
   }
 }
