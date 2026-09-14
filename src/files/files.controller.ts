@@ -10,11 +10,13 @@ import {
   MaxFileSizeValidator,
 } from '@nestjs/common';
 import { ApiBody, ApiConsumes } from '@nestjs/swagger';
+import { FilesService } from './files.service';
 
 import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('files')
 export class FilesController {
+  constructor(private readonly filesService: FilesService) {}
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
@@ -44,10 +46,6 @@ export class FilesController {
     )
     file: Express.Multer.File,
   ) {
-    return {
-      originalName: file.originalname,
-      mimeType: file.mimetype,
-      size: file.size,
-    };
+    return this.filesService.uploadFile(file);
   }
 }
