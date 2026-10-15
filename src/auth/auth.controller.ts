@@ -15,6 +15,7 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { Roles } from './decorators/roles.decorator';
 import { RolesGuard } from './guards/roles.guard';
+import { ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 
 @Controller('auth')
 export class AuthController {
@@ -27,6 +28,21 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    description: 'Login successful',
+    schema: {
+      example: {
+        access_token: 'eyJhbGciOiJIUzI1NiIs...',
+        refresh_token: 'eyJhbGciOiJIUzI1NiIs...',
+        user: {
+          id: 2,
+          name: 'Dany',
+          email: 'dany@example.com',
+          role: 'admin',
+        },
+      },
+    },
+  })
   login(@Body() body: LoginDto) {
     return this.authService.login(body);
   }
@@ -39,6 +55,7 @@ export class AuthController {
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   getProfile(@Req() req) {
     return req.user;
   }
@@ -46,6 +63,7 @@ export class AuthController {
   @Get('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
+  @ApiBearerAuth()
   adminOnly() {
     return {
       message: 'Welcome, admin',
