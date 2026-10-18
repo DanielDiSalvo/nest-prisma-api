@@ -9,12 +9,16 @@ import {
 } from '@aws-sdk/client-s3';
 import { randomUUID } from 'crypto';
 import { extname } from 'path';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class FilesService {
   private readonly s3: S3Client;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {
     this.s3 = new S3Client({
       region: this.configService.get<string>('AWS_REGION'),
       credentials: {
@@ -26,7 +30,7 @@ export class FilesService {
     });
   }
 
-  async uploadFile(file: Express.Multer.File) {
+  async uploadFile(file: Express.Multer.File, userId: number) {
     const extension = extname(file.originalname);
     const key = `uploads/${randomUUID()}${extension}`;
 
@@ -39,9 +43,27 @@ export class FilesService {
 
     await this.s3.send(command);
 
-    return {
-      key,
-    };
+    try {
+      const savedFile = await this.prisma.file.create({
+        data: {
+          key,
+          originalName: file.originalname,
+          mimeType: file.mimetype,
+          size: file.size,
+          userId,
+        },
+      });
+
+      return savedFile;
+    } catch (error) {
+      try {
+        await this.deleteFile(key);
+      } catch (cleanupError) {
+        console.error('Failed to clean up S3 file:', key, cleanupError);
+      }
+
+      throw error;
+    }
   }
 
   async getFile(key: string) {

@@ -1,5 +1,5 @@
 import type {} from 'multer';
-
+import type { Request } from 'express';
 import {
   Controller,
   Get,
@@ -12,6 +12,7 @@ import {
   FileTypeValidator,
   MaxFileSizeValidator,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -25,6 +26,8 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 export class FilesController {
   constructor(private readonly filesService: FilesService) {}
   @Post('upload')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -52,8 +55,17 @@ export class FilesController {
       }),
     )
     file: Express.Multer.File,
+
+    @Req()
+    req: Request & {
+      user: {
+        sub: number;
+        email: string;
+        role: string;
+      };
+    },
   ) {
-    return this.filesService.uploadFile(file);
+    return this.filesService.uploadFile(file, req.user.sub);
   }
 
   @Get('url/*path')
