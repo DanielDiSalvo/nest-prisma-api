@@ -1,5 +1,5 @@
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   S3Client,
@@ -57,7 +57,7 @@ export class FilesService {
       return savedFile;
     } catch (error) {
       try {
-        await this.deleteFile(key);
+        await this.deleteFromS3(key);
       } catch (cleanupError) {
         console.error('Failed to clean up S3 file:', key, cleanupError);
       }
@@ -75,7 +75,24 @@ export class FilesService {
     return this.s3.send(command);
   }
 
-  async getFileUrl(key: string) {
+  private async findOwnedFile(key: string, userId: number) {
+    const file = await this.prisma.file.findFirst({
+      where: {
+        key,
+        userId,
+      },
+    });
+
+    if (!file) {
+      throw new NotFoundException('File not found');
+    }
+
+    return file;
+  }
+
+  async getFileUrl(key: string, userId: number) {
+    await this.findOwnedFile(key, userId);
+
     const command = new GetObjectCommand({
       Bucket: this.configService.get<string>('AWS_S3_BUCKET'),
       Key: key,
@@ -88,13 +105,25 @@ export class FilesService {
     return { url };
   }
 
-  async deleteFile(key: string) {
+  private async deleteFromS3(key: string) {
     const command = new DeleteObjectCommand({
       Bucket: this.configService.get<string>('AWS_S3_BUCKET'),
       Key: key,
     });
 
     await this.s3.send(command);
+  }
+
+  async deleteFile(key: string, userId: number) {
+    const file = await this.findOwnedFile(key, userId);
+
+    await this.deleteFromS3(key);
+
+    await this.prisma.file.delete({
+      where: {
+        id: file.id,
+      },
+    });
 
     return {
       message: 'File deleted successfully',

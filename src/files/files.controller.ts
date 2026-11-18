@@ -71,16 +71,38 @@ export class FilesController {
   @Get('url/*path')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  getFileUrl(@Param('path') path: string[]) {
+  getFileUrl(
+    @Param('path') path: string[],
+    @Req()
+    req: Request & {
+      user: {
+        sub: number;
+        email: string;
+        role: string;
+      };
+    },
+  ) {
     const key = path.join('/');
-    return this.filesService.getFileUrl(key);
+
+    return this.filesService.getFileUrl(key, req.user.sub);
   }
 
   @Delete('url/*path')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  deleteFile(@Param('path') path: string[]) {
+  deleteFile(
+    @Param('path') path: string[],
+    @Req()
+    req: Request & {
+      user: {
+        sub: number;
+        email: string;
+        role: string;
+      };
+    },
+  ) {
     const key = path.join('/');
-    return this.filesService.deleteFile(key);
+
+    return this.filesService.deleteFile(key, req.user.sub);
   }
 }
